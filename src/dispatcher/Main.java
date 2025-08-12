@@ -5,8 +5,8 @@
 package dispatcher;
 
 import business.Customers;
-import business.orders;
-import business.setMenus;
+import business.Orders;
+import business.SetMenus;
 import tools.Inputter;
 import tools.StringUtils;
 
@@ -17,8 +17,8 @@ import tools.StringUtils;
  public class Main {
 
     private static Customers customerManager = new Customers();
-    private static setMenus menuManager = new setMenus();
-    private static orders orderManager = new orders(customerManager, menuManager);
+    private static SetMenus menuManager = new SetMenus();
+    private static Orders orderManager = new Orders(customerManager, menuManager);
     private static Inputter inputter = new Inputter();
     
     public static void main(String[] args) {

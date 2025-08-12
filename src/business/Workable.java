@@ -8,10 +8,15 @@ package business;
  *
  * @author thanh
  */
-public interface Workable <T> {
-    void addNew(T item);
-    void update(T item);
-    T search(String criteria);
-    void display();
-    boolean validate(T item);
+public interface Workable<T> {
+
+    public void addNew(T item);
+
+    public void update(T item);
+
+    public T search(String criteria);
+
+    public void display();
+
+    public boolean validate(T item);
 }
