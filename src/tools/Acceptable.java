@@ -1,50 +1,27 @@
-package tools;
-
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
+package tools;
 
 /**
  *
- * @author thanh
+ * @author tungi
  */
 public interface Acceptable {
-   // Customer ID pattern: C/G/K followed by 4 digits
-    public final String CUS_ID_VALID = "^[CGK]\\d{4}$";
+
+    public static String customerCodeRegex = "^[CGKcgk]\\d{4}$";
+    public static String nameRegex = "^.{2,25}$";
+    public static String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+    // Viettel: 032, 033, 034, 035, 036, 037, 038, 039, 086, 096, 097, 098
+    // Mobi: 090, 093, 089, 070, 079, 077, 076, và 078
+    // Vina: 081, 082, 083, 084, 085, 088, 091 và 094
+    // Vietnamobile: 052, 056, 058 và 092
+    public static String phoneRegex = "^(03[2-9]|086|09[6-8]|090|093|089|070|079|077|076|078|081|082|083|084|085|088|091|094|052|056|058|092)\\d{7}$";
+    public static String positive_integer = "^[1-9]\\d*";
+    public static String anything = ".*";
     
-    // Name pattern: 2-25 characters
-    public final String NAME_VALID = "^.{2,25}$";
-    
-    // Phone pattern: 10 digits starting with 0
-    public final String PHONE_VALID = "^0\\d{9}$";
-    
-    // Email pattern: standard email format
-    public final String EMAIL_VALID = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
-    
-    // Integer pattern: positive or negative integers 
-    public final String INTEGER_VALID = "^-?\\d+$";
-    
-    // Positive integer pattern: integers greater than 0 
-    public final String POSITIVE_INT_VALID = "^[1-9]\\d*$";
-    
-    // Double pattern: positive or negative decimal numbers 
-    public final String DOUBLE_VALID = "^-?\\d+(\\.\\d+)?$";
-    
-    // Positive double pattern: decimal numbers greater than 0 
-    public final String POSITIVE_DOUBLE_VALID = "^([1-9]\\d*(\\.\\d+)?|0\\.\\d*[1-9]\\d*)$";
-    
-    // Date pattern: dd/MM/yyyy format
-    public final String DATE_VALID = "^\\d{2}/\\d{2}/\\d{4}$";
-    
-    // Menu code pattern: PW followed by 3 digits
-    public final String MENU_CODE_VALID = "^PW\\d{3}$";
-    
-    // Static method to validate data against pattern
-    static boolean isValid(String data, String pattern) {
-        if (data == null || pattern == null) {
-            return false;
-        }
-        return data.matches(pattern);
+    public static boolean isValid(String data, String regex){
+        return data.matches(regex);
     }
 }

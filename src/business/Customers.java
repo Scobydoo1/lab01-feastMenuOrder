@@ -1,240 +1,157 @@
+package business;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import models.Customer;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package business;
-
-import model.Customer;
-import tools.*;
-import java.io.*;
-import java.util.*;;
 /**
  *
- * @author thanh
+ * @author tungi
  */
-public class Customers extends ArrayList<Customer> implements Workable<Customer> {
-    private Inputter inputter = new Inputter();
-    private static final String DATA_FILE = "customers.dat";
+public class Customers extends HashSet<Customer> implements Workable<Customer>, Serializable {
 
-    public Customers() {
-        loadFromFile();
+    private String pathFile;
+    private boolean saved;
+
+    public Customers(String pathFile) {
+        this.pathFile = pathFile;
+        this.saved = true;
+        init();
+    }
+
+    private void init() {
+        HashSet<Customer> result = readFromFile();
+        this.clear();
+        this.addAll(result);
+    }
+
+    public boolean isDuplicated(Customer c) {
+        return this.contains(c);
     }
 
     @Override
-    public void addNew(Customer customer) {
-        if (validate(customer)) {
-            this.add(customer);
-            System.out.println("Customer added successfully!");
-        }
-    }
-
-    @Override
-    public void update(Customer customer) {
-        for (int i = 0; i < this.size(); i++) {
-            if (this.get(i).getId().equalsIgnoreCase(customer.getId())) {
-                this.set(i, customer);
-                System.out.println("Customer updated successfully!");
-                return;
-            }
-        }
-        System.out.println("Customer not found!");
-    }
-
-    @Override
-    public Customer search(String id) {
-        for (Customer customer : this) {
-            if (customer.getId().equalsIgnoreCase(id)) {
-                return customer;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void display() {
-        if (this.isEmpty()) {
-            System.out.println("No customers in the system.");
-            return;
-        }
-
-        // Sort by name alphabetically
-        this.sort(Comparator.comparing(Customer::getName));
-        System.out.println("\n=== CUSTOMER LIST ===");
-        System.out.printf("%-8s | %-25s | %-12s | %-30s\n", "Code", "Name", "Phone", "Email");
-        System.out.println(StringUtils.repeat("─", 80));
-        for (Customer customer : this) {
-            System.out.printf("%-8s | %-25s | %-12s | %-30s\n",
-                    customer.getId(), customer.getName(), customer.getPhone(), customer.getEmail());
-        }
-        System.out.println(StringUtils.repeat("─", 80));
-        System.out.println("Total customers: " + this.size());
-    }
-
-    @Override
-    public boolean validate(Customer customer) {
-        if (customer == null) return false;
-        if (customer.getId() == null || !Acceptable.isValid(customer.getId(), Acceptable.CUS_ID_VALID)) return false;
-        if (customer.getName() == null || !Acceptable.isValid(customer.getName(), Acceptable.NAME_VALID)) return false;
-        if (customer.getPhone() == null || !Acceptable.isValid(customer.getPhone(), Acceptable.PHONE_VALID)) return false;
-        if (customer.getEmail() == null || !Acceptable.isValid(customer.getEmail(), Acceptable.EMAIL_VALID)) return false;
-        return true;
-    }
-
-    /**
-     * Register a new customer with input validation
-     */
-    public void registerCustomer() {
-        while (true) {
-            System.out.println("\n=== REGISTER NEW CUSTOMER ===");
-            String id;
-            do {
-                id = inputter.getCustomerId("Enter customer code (C/G/Kxxxx): ");
-                if (search(id) != null) {
-                    System.out.println("Customer code already exists. Please enter a different code.");
-                    id = ""; // reset to force re-entry
-                }
-            } while (id.isEmpty());
-
-            String name = inputter.getName("Enter name (2-25 chars): ");
-            String phone = inputter.getPhone("Enter phone (10 digits starting with 0): ");
-            String email = inputter.getEmail("Enter email: ");
-
-            Customer newCustomer = new Customer(id, name, phone, email);
-            addNew(newCustomer);
-
-            String cont = inputter.getString("Continue registering? (Y/N): ");
-            if (!cont.equalsIgnoreCase("Y")) break;
-        }
-    }
-
-    /**
-     * Update customer information
-     */
-    public void updateCustomer() {
-        while (true) {
-            System.out.println("\n=== UPDATE CUSTOMER INFORMATION ===");
-            String id = inputter.getCustomerId("Enter customer code to update: ");
-            Customer customer = search(id);
-            if (customer == null) {
-                System.out.println("This customer does not exist.");
-            } else {
-                System.out.println("Current information: " + customer.toString());
-
-                String name = inputter.getString("Enter new name (leave blank to keep old): ");
-                if (!name.trim().isEmpty() && Acceptable.isValid(name, Acceptable.NAME_VALID)) {
-                    customer.setName(name);
-                }
-
-                String phone = inputter.getString("Enter new phone (leave blank to keep old): ");
-                if (!phone.trim().isEmpty() && Acceptable.isValid(phone, Acceptable.PHONE_VALID)) {
-                    customer.setPhone(phone);
-                }
-
-                String email = inputter.getString("Enter new email (leave blank to keep old): ");
-                if (!email.trim().isEmpty() && Acceptable.isValid(email, Acceptable.EMAIL_VALID)) {
-                    customer.setEmail(email);
-                }
-
-                System.out.println("Customer updated successfully!");
-            }
-
-            String cont = inputter.getString("Continue updating? (Y/N): ");
-            if (!cont.equalsIgnoreCase("Y")) break;
-        }
-    }
-
-    /**
-     * Search customers by name
-     */
-    public void searchCustomerByName() {
-        System.out.println("\n=== SEARCH CUSTOMER BY NAME ===");
-        String keyword = inputter.getString("Enter name or part of name to search: ").toLowerCase();
-        List<Customer> matched = searchByName(keyword);
-
-        if (matched.isEmpty()) {
-            System.out.println("No one matches the search criteria!");
+    public void addNew(Customer t) {
+        if (!this.isDuplicated(t)) {
+            this.add(t);
+            this.saved = false;
         } else {
-            matched.sort(Comparator.comparing(Customer::getName));
-            System.out.println("\nMatching Customers: " + keyword);
-            System.out.printf("%-8s | %-25s | %-12s | %-30s\n", "Code", "Name", "Phone", "Email");
-            System.out.println(StringUtils.repeat("─", 80));
-            for (Customer customer : matched) {
-                System.out.printf("%-8s | %-25s | %-12s | %-30s\n",
-                        customer.getId(), customer.getName(), customer.getPhone(), customer.getEmail());
-            }
-            System.out.println(StringUtils.repeat("─", 80));
+            System.out.println("Error: Customer already exists!");
         }
     }
 
-    /**
-     * Search customers by name (returns list)
-     */
-    public List<Customer> searchByName(String keyword) {
-        List<Customer> results = new ArrayList<>();
-        String lowerKeyword = keyword.toLowerCase();
-        for (Customer customer : this) {
-            if (customer.getName().toLowerCase().contains(lowerKeyword)) {
-                results.add(customer);
+    @Override
+    public void update(Customer t) {
+        this.remove(t);
+        this.add(t);
+        this.saved = false;
+    }
+
+    @Override
+    public Customer searchById(String id) {
+        Customer result = null;
+        for (Customer c : this) {
+            if (c.getCustomerCode().equalsIgnoreCase(id)) {
+                result = c;
             }
         }
-        return results;
+        return result;
     }
 
-    /**
-     * Check if customer exists
-     */
-    public boolean customerExists(String id) {
-        return search(id) != null;
+    public void show(Set<Customer> list) {
+        System.out.println("-------------------------------------------------------------");
+        System.out.format("%-6s | %-25s | %-11s | %-20s%n", "Code", "Customer Name", "Phone", "Email");
+        System.out.println("-------------------------------------------------------------");
+        for (Customer c : list) {
+            System.out.format("%-6s | %-25s | %-11s | %-20s%n", c.getCustomerCode(), c.getName(), c.getPhoneNumber(), c.getEmail());
+        }
+        System.out.println("-------------------------------------------------------------");
     }
 
-    /**
-     * Save customers to binary file
-     */
+    @Override
+    public void showAll() {
+        show(this);
+    }
+
+    public Set<Customer> filterByName(String name) {
+        Set<Customer> result = new HashSet<Customer>();
+        for (Customer c : this) {
+            if (c.getName().contains(name)) {
+                result.add(c);
+            }
+        }
+        return result;
+    }
+
+    public boolean isSaved() {
+        return saved;
+    }
+
     public void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
+        if (this.saved) {
+            return;
+        }
+        try {
+            // B1. Tao file moi
+            File f = new File(pathFile);
+            if (!f.exists()) {
+                f.createNewFile();
+            }
+
+            // B2. Tao FileOutputStream
+            FileOutputStream fos = new FileOutputStream(f);
+
+            // B3. Tao ObjectOutputStream
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+            // B4. Ghi file
             oos.writeObject(this);
-            System.out.println("Customer data has been successfully saved to \"" + DATA_FILE + "\".");
-        } catch (IOException e) {
-            System.out.println("Error saving customers: " + e.getMessage());
+
+            // B5. Dong cac object
+            oos.close();
+
+            // B6. Thay doi trang thai cua saved
+            this.saved = true;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    /**
-     * Load customers from binary file
-     */
-    @SuppressWarnings("unchecked")
-    public void loadFromFile() {
-        File file = new File(DATA_FILE);
-        if (!file.exists()) {
-            System.out.println("No existing customer data found. Starting with empty database.");
-            return;
-        }
+    public HashSet<Customer> readFromFile() {
+        HashSet<Customer> result = new HashSet<>();
+        try {
+            // B1. Tao file moi
+            File f = new File(pathFile);
+            if (!f.exists()) {
+                return result;
+            }
 
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(DATA_FILE))) {
-            List<Customer> loadedCustomers = (List<Customer>) ois.readObject();
-            this.clear();
-            this.addAll(loadedCustomers);
-            System.out.println("Successfully loaded " + this.size() + " customers from " + DATA_FILE);
-        } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error loading customers: " + e.getMessage());
+            // B2. Tao FileInputStream
+            FileInputStream fis = new FileInputStream(f);
+
+            // B3. Tao ObjectOutputStream
+            ObjectInputStream ois = new ObjectInputStream(fis);
+
+            // B4. Ghi file
+            result = (Customers) ois.readObject();
+
+            // B5. Dong cac object
+            ois.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return result;
     }
 
-    /**
-     * Display customers with custom list
-     */
-    public void display(List<Customer> customerList) {
-        if (customerList.isEmpty()) {
-            System.out.println("No customers to display.");
-            return;
-        }
-
-        System.out.printf("%-8s | %-25s | %-12s | %-30s\n", "Code", "Name", "Phone", "Email");
-        System.out.println(StringUtils.repeat("─", 80));
-        for (Customer customer : customerList) {
-            System.out.printf("%-8s | %-25s | %-12s | %-30s\n",
-                    customer.getId(), customer.getName(), customer.getPhone(), customer.getEmail());
-        }
-        System.out.println(StringUtils.repeat("─", 80));
-    }
 }

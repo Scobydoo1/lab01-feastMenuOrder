@@ -7,248 +7,212 @@ package dispatcher;
 import business.Customers;
 import business.Orders;
 import business.SetMenus;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
+import models.Customer;
+import models.Order;
 import tools.Inputter;
-import tools.StringUtils;
 
 /**
  *
- * @author thanh
+ * @author tungi
  */
- public class Main {
+public class Main {
 
-    private static Customers customerManager = new Customers();
-    private static SetMenus menuManager = new SetMenus();
-    private static Orders orderManager = new Orders(customerManager, menuManager);
-    private static Inputter inputter = new Inputter();
-    
+    private static final int REGISTER_CUSTOMERS = 1;
+    private static final int UPDATE_CUSTOMER = 2;
+    private static final int SEARCH_CUSTOMER = 3;
+    private static final int DISPLAY_MENU = 4;
+    private static final int PLACE_ORDER = 5;
+    private static final int UPDATE_ORDER = 6;
+    private static final int SAVE_DATA = 7;
+    private static final int DISPLAY_ALL = 8;
+    private static final int EXIT = 9;
+    private static final int RETURN_TO_MAIN = 2;
+    private static final String CUSTOMERS_FILE = "customers.dat";
+    private static final String ORDERS_FILE = "feast_order_service.dat";
+    private static final String MENU_FILE = "FeastMenu.csv";
+
+    private static Inputter inputter;
+    private static Customers customers;
+    private static Orders orders;
+    private static SetMenus setMenus;
+    private static Scanner scanner;
+
+    private static void initializeSystem() {
+        inputter = new Inputter();
+        customers = new Customers(CUSTOMERS_FILE);
+        orders = new Orders(ORDERS_FILE);
+        setMenus = new SetMenus(MENU_FILE);
+        scanner = new Scanner(System.in);
+    }
+
+    private static void displayMainMenu() {
+        System.out.println("\n----------MAIN MENU------------");
+        System.out.println("1. Register customers");
+        System.out.println("2. Update customer information");
+        System.out.println("3. Seach for customer information by name");
+        System.out.println("4. Display feast menu");
+        System.out.println("5. Place a feast order");
+        System.out.println("6. Update order");
+        System.out.println("7. Save data to file");
+        System.out.println("8. Display all customers");
+        System.out.println("9. Exit");
+        System.out.print("Enter Test Case No. : ");
+    }
+
+    private static int getMenuChoice() {
+        return Integer.parseInt(scanner.nextLine());
+    }
+
+    private static void runMainMenu() {
+        int testCase;
+        do {
+            displayMainMenu();
+            testCase = getMenuChoice();
+            processMenuChoice(testCase);
+        } while (testCase != EXIT);
+    }
+
+    private static void handleCustomerRegistration() {
+        int option;
+        do {
+            customers.addNew(inputter.inputCustomer(false));
+            System.out.println("1. Continue entering new customers");
+            System.out.println("2. Return to the main menu");
+            System.out.println("Enter your option: ");
+            option = Integer.parseInt(scanner.nextLine());
+        } while (option != RETURN_TO_MAIN);
+    }
+
+    private static void handleCustomerUpdate() {
+        int option = 0;
+        do {
+            System.out.print("Enter customer code: ");
+            String customerCode = scanner.nextLine();
+            Customer c = customers.searchById(customerCode);
+            if (c == null) {
+                // Khong ton tai
+                System.out.println("This customer does not exist.");
+            } else {
+                // Co ton tai
+                Customer customer = inputter.inputCustomer(true);
+                customer.setCustomerCode(c.getCustomerCode());
+                customers.update(customer);
+            }
+
+            System.out.println("1. Continue edit customers");
+            System.out.println("2. Return to the main menu");
+            System.out.println("Enter your option: ");
+            option = Integer.parseInt(scanner.nextLine());
+        } while (option != RETURN_TO_MAIN);
+    }
+
+    private static void handleCustomerSearch() {
+        String name = "";
+        System.out.println("Enter the name or partial name of customers");
+        name = scanner.nextLine();
+        Set<Customer> set = customers.filterByName(name);
+        if (set.size() == 0) {
+            System.out.println("No one matches the search criteria!");
+        } else {
+            customers.show(set);
+        }
+    }
+
+    private static void handleMenuDisplay() {
+        setMenus.readFromFile();
+        setMenus.showAll();
+    }
+
+    private static void handleOrderPlacement() {
+        Order o = inputter.inputOrder(false, customers, setMenus, orders);
+        if (orders.isDupplicated(o)) {
+            System.out.println("Dupplicate data!");
+        } else {
+            orders.addNew(o);
+            o.display(customers, setMenus);
+        }
+    }
+
+    private static void handleOrderUpdating() {
+        int option = 0;
+        do {
+            Order o = inputter.inputOrder(true, customers, setMenus, orders);
+            if (o != null) {
+                orders.update(o);
+                o.display(customers, setMenus);
+                System.out.println("Update successfull!");
+            }
+            System.out.println("1. Continue edit orders");
+            System.out.println("2. Return to the main menu");
+            System.out.println("Enter your option: ");
+            option = Integer.parseInt(scanner.nextLine());
+        } while (option != RETURN_TO_MAIN);
+    }
+
+    private static void handleDataSaving() {
+        customers.saveToFile();
+        orders.saveToFile();
+        System.out.println("The data is successfully saved!");
+    }
+
+    private static void handleDisplayAll() {
+        HashSet<Customer> c = customers.readFromFile();
+        ArrayList<Order> o = orders.readFromFile();
+        if (c.size() > 0) {
+            customers.show(c);
+        } else {
+            System.out.println("No customers data!");
+        }
+
+        if (o.size() > 0) {
+            orders.show(o);
+        } else {
+            System.out.println("No orders data!");
+        }
+    }
+
+    private static void processMenuChoice(int testCase) {
+        switch (testCase) {
+            case REGISTER_CUSTOMERS:
+                handleCustomerRegistration();
+                break;
+            case UPDATE_CUSTOMER:
+                handleCustomerUpdate();
+                break;
+            case SEARCH_CUSTOMER:
+                handleCustomerSearch();
+                break;
+            case DISPLAY_MENU:
+                handleMenuDisplay();
+                break;
+            case PLACE_ORDER:
+                handleOrderPlacement();
+                break;
+            case UPDATE_ORDER:
+                handleOrderUpdating();
+                break;
+            case SAVE_DATA:
+                handleDataSaving();
+                break;
+            case DISPLAY_ALL:
+                handleDisplayAll();
+                break;
+            case EXIT:
+                //handleExit();
+                break;
+            default:
+                throw new AssertionError();
+        }
+    }
+
     public static void main(String[] args) {
-        System.out.println(StringUtils.repeat("=", 60));
-        System.out.println("         TRADITIONAL FEAST ORDER MANAGEMENT SYSTEM");
-        System.out.println(StringUtils.repeat("=", 60));
-        System.out.println("System initialized successfully!");
-        System.out.println("Data loaded from files.");
-        showMainMenu();
+        initializeSystem();
+        runMainMenu();
     }
-    
-    private static void showMainMenu() {
-        while (true) {
-            System.out.println("\n" + StringUtils.repeat("=", 50));
-            System.out.println("         TRADITIONAL FEAST MANAGEMENT");
-            System.out.println(StringUtils.repeat("=", 50));
-            System.out.println("1. Register customers");
-            System.out.println("2. Update customer information");
-            System.out.println("3. Search for customer information by name");
-            System.out.println("4. Display feast menus");
-            System.out.println("5. Place a feast order");
-            System.out.println("6. Update order information");
-            System.out.println("7. Save data to file");
-            System.out.println("8. Display Customer or Order lists");
-            System.out.println("9. Quit");
-            System.out.println(StringUtils.repeat("=", 50));
-            
-            int choice = inputter.getInt("Enter your choice (1-9): ");
-            
-            switch (choice) {
-                case 1:
-                    registerCustomers();
-                    break;
-                case 2:
-                    updateCustomerInformation();
-                    break;
-                case 3:
-                    searchCustomerByName();
-                    break;
-                case 4:
-                    displayFeastMenus();
-                    break;
-                case 5:
-                    placeOrder();
-                    break;
-                case 6:
-                    updateOrderInformation();
-                    break;
-                case 7:
-                    saveDataToFile();
-                    break;
-                case 8:
-                    displayLists();
-                    break;
-                case 9:
-                    quitApplication();
-                    return;
-                default:
-                    System.out.println("Invalid choice! Please enter 1-9.");
-            }
-        }
-    }
-    
-    private static void registerCustomers() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         CUSTOMER REGISTRATION");
-        System.out.println(StringUtils.repeat("=", 50));
-        customerManager.registerCustomer();
-    }
-    
-    private static void updateCustomerInformation() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         UPDATE CUSTOMER INFORMATION");
-        System.out.println(StringUtils.repeat("=", 50));
-        customerManager.updateCustomer();
-    }
-    
-    private static void searchCustomerByName() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         SEARCH CUSTOMERS");
-        System.out.println(StringUtils.repeat("=", 50));
-        customerManager.searchCustomerByName();
-    }
-    
-    private static void displayFeastMenus() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         FEAST MENUS");
-        System.out.println(StringUtils.repeat("=", 50));
-        menuManager.display();
-    }
-    
-    private static void placeOrder() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         PLACE FEAST ORDER");
-        System.out.println(StringUtils.repeat("=", 50));
-        orderManager.placeOrder();
-    }
-    
-    private static void updateOrderInformation() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         UPDATE ORDER INFORMATION");
-        System.out.println(StringUtils.repeat("=", 50));
-        orderManager.updateOrder();
-    }
-    
-    private static void saveDataToFile() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         SAVE DATA");
-        System.out.println(StringUtils.repeat("=", 50));
-        System.out.println("Choose data to save:");
-        System.out.println("1. Save customer data");
-        System.out.println("2. Save order data");
-        System.out.println("3. Save both");
-        
-        int choice = inputter.getInt("Enter your choice (1-3): ");
-        
-        switch (choice) {
-            case 1:
-                customerManager.saveToFile();
-                break;
-            case 2:
-                orderManager.saveToFile();
-                break;
-            case 3:
-                customerManager.saveToFile();
-                orderManager.saveToFile();
-                break;
-            default:
-                System.out.println("Invalid choice!");
-        }
-    }
-    
-    private static void displayLists() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         DISPLAY LISTS");
-        System.out.println(StringUtils.repeat("=", 50));
-        System.out.println("Choose what to display:");
-        System.out.println("1. Display all customers");
-        System.out.println("2. Display all orders");
-        System.out.println("3. Display feast menus");
-        System.out.println("4. Display system statistics");
-        
-        int choice = inputter.getInt("Enter your choice (1-4): ");
-        
-        switch (choice) {
-            case 1:
-                displayCustomerList();
-                break;
-            case 2:
-                displayOrderList();
-                break;
-            case 3:
-                displayFeastMenus();
-                break;
-            case 4:
-                displaySystemStatistics();
-                break;
-            default:
-                System.out.println("Invalid choice!");
-        }
-    }
-    
-    private static void displayCustomerList() {
-        if (customerManager.isEmpty()) {
-            System.out.println("Does not have any customer information.");
-        } else {
-            customerManager.display();
-        }
-    }
-    
-    private static void displayOrderList() {
-        if (orderManager.isEmpty()) {
-            System.out.println("No data in the system.");
-        } else {
-            orderManager.display();
-        }
-    }
-    
-    private static void displaySystemStatistics() {
-        System.out.println("\n=== SYSTEM STATISTICS ===");
-        System.out.println("Total customers: " + customerManager.size());
-        System.out.println("Total orders: " + orderManager.size());
-        System.out.println("Available feast menus: " + menuManager.size());
-        
-        if (!orderManager.isEmpty()) {
-            // Calculate total revenue
-            double totalRevenue = 0;
-            for (Object orderObj : orderManager) {
-                if (orderObj instanceof model.Order) {
-                    model.Order order = (model.Order) orderObj;
-                    totalRevenue += order.getTotalCost();
-                }
-            }
-            System.out.println("Total revenue: " + String.format("%,.0f", totalRevenue) + " VND");
-        }
-        
-        System.out.println("\nData files status:");
-        System.out.println("- customers.dat: " + (new java.io.File("customers.dat").exists() ? "Available" : "Not found"));
-        System.out.println("- feast_order_service.dat: " + (new java.io.File("feast_order_service.dat").exists() ? "Available" : "Not found"));
-        System.out.println("- feastMenu.csv: " + (new java.io.File("feastMenu.csv").exists() ? "Available" : "Not found"));
-    }
-    
-    private static void quitApplication() {
-        System.out.println("\n" + StringUtils.repeat("=", 50));
-        System.out.println("         QUIT APPLICATION");
-        System.out.println(StringUtils.repeat("=", 50));
-        
-        String saveChoice = inputter.getString("Do you want to save data before quitting? (Y/N): ");
-        if (saveChoice.equalsIgnoreCase("Y")) {
-            customerManager.saveToFile();
-            orderManager.saveToFile();
-        }
-        System.out.println("\nThank you for using Traditional Feast Order Management System!");
-        System.out.println("System shutting down...");
-        System.out.println(StringUtils.repeat("=", 60));
-        inputter = null;
-        System.exit(0);
-    }
-    
-    private static void displayWelcomeMessage() {
-        System.out.println("\nWelcome to Traditional Feast Order Management System!");
-        System.out.println("This system helps you manage:");
-        System.out.println("- Customer registration and information");
-        System.out.println("- Feast menu catalog from CSV file");
-        System.out.println("- Order placement and management");
-        System.out.println("- Data persistence with binary files");
-        System.out.println("\nFeatures:");
-        System.out.println("✓ Comprehensive input validation");
-        System.out.println("✓ Duplicate order prevention");
-        System.out.println("✓ Automatic data loading and saving");
-        System.out.println("✓ Professional reporting and statistics");
-    }
+
 }

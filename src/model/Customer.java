@@ -2,7 +2,6 @@ package model;
 
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -64,35 +63,4 @@ public class Customer implements Serializable {
     public String toString(){
            return String.format("%s , %s , %s , %s", id, name, phone, email);
     }
-
-   
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Customer other = (Customer) obj;
-        if (!Objects.equals(this.id, other.id)) {
-            return false;
-        }
-        if (!Objects.equals(this.name, other.name)) {
-            return false;
-        }
-        if (!Objects.equals(this.phone, other.phone)) {
-            return false;
-        }
-        if (!Objects.equals(this.email, other.email)) {
-            return false;
-        }
-        return true;
-    }
-
-
 }
